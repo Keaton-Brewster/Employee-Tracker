@@ -33,7 +33,7 @@ const viewAllEmployees = () => {
 
             setTimeout(() => {
                 init();
-            }, 300);
+            }, 100);
         })
 };
 
@@ -41,7 +41,6 @@ const viewEmployeesByDepartment = () => {
     conn.query(`SELECT * FROM deps`, (err, table) => {
         if (err) throw err;
 
-        console.log(table)
         let deps = []
         table.forEach(column => {
             deps.push(column.Department)
@@ -68,7 +67,7 @@ const viewEmployeesByDepartment = () => {
                     console.table(table)
                     setTimeout(() => {
                         init();
-                    }, 300);
+                    }, 100);
                 })
         })
     })
@@ -136,13 +135,15 @@ const addEmployee = async (data) => {
     const role_id = await sqlQueries.getRoleID(role);
     const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
     sqlQueries.addEmployeeToDB(newEmployee)
+    setTimeout(() => {
+        init();
+    }, 100);
 }
 
 const buildEmployee = async () => {
     let roles = await sqlQueries.getRoles();
     let managers = await sqlQueries.getManagers();
     managers.push("None");
-    console.log(roles);
     inquire.prompt([{
             message: "What is the employees first name?",
             name: "First_name"
@@ -164,6 +165,49 @@ const buildEmployee = async () => {
             name: "manager"
         }
     ]).then(data => addEmployee(data))
+}
+
+const deleteEmployee = async () => {
+    const employees = await sqlQueries.getEmployeeNames();
+    inquire.prompt([{
+        type: 'list',
+        message: "Which employee would you like to delete?",
+        choices: employees,
+        name: "choice"
+    }]).then(your => {
+        sqlQueries.deleteEmployee(your.choice);
+        setTimeout(() => {
+            init();
+        }, 100);
+    })
+}
+
+const updateEmployeeRole = async (data) => {
+    const role_id = await sqlQueries.getRoleID(data.role)
+    console.log(`${data.employee}, ${role_id}`)
+    const newEmployeeRole = {
+        full_name: data.employee,
+        role_id: role_id
+    }
+    sqlQueries.updateEmployeeRole(newEmployeeRole);
+}
+
+const chooseEmployeeUpdates = async () => {
+    const employees = await sqlQueries.getEmployeeNames();
+    const roles = await sqlQueries.getRoles();
+    inquire.prompt([{
+            type: "list",
+            message: "Which employee do you need to update?",
+            choices: employees,
+            name: "employee"
+        },
+        {
+            type: "list",
+            message: "Which role should they have?",
+            choices: roles,
+            name: "role"
+        }
+    ]).then(update => updateEmployeeRole(update));
 }
 
 const init = () => {
@@ -196,10 +240,10 @@ const init = () => {
                 buildEmployee();
                 break;
             case `${chalk.redBright("Remove")} employee`:
-                console.log("remove")
+                deleteEmployee();
                 break;
             case "Update employee role":
-                console.log("update role")
+                chooseEmployeeUpdates();
                 break;
             case "Update employee Manager":
                 console.log("update manager")

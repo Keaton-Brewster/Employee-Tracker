@@ -123,6 +123,31 @@ const addEmployeeToDB = (employeeOBJ) => {
         })
 }
 
+const deleteEmployee = (employeeFullName) => {
+    console.log(employeeFullName);
+    conn.query(`DELETE FROM employees e
+                WHERE
+                CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
+        (err, dbRes) => {
+            if (err) console.log("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")
+        })
+}
+
+const getEmployeeNames = async () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
+                AS name FROM employees e`, (err, table) => {
+            if (err) reject(err);
+            table.map(col => col.name)
+            resolve(table)
+        })
+    })
+}
+
+const updateEmployeeRole = async (newEmployeeRole) => {
+    console.log(newEmployeeRole)
+}
+
 const print = async (callback) => {
     let data = await callback("Manager");
     console.log(data)
@@ -153,4 +178,7 @@ module.exports = {
     getManagers: getManagers,
     getManagerID: getManagerID,
     addEmployeeToDB: addEmployeeToDB,
+    deleteEmployee: deleteEmployee,
+    getEmployeeNames: getEmployeeNames,
+    updateEmployeeRole: updateEmployeeRole,
 }
