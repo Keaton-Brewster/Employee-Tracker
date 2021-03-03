@@ -15,6 +15,8 @@ const config = {
 
 const conn = mysql.createConnection(config);
 
+
+// COULD PROBABLY REWRITE THIS SO THAT IT IS A PROMISE, AND CAN REJECT IF SOMETHING GOES AMISS
 const viewAllEmployees = () => {
     conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
                 FROM employees e
@@ -37,6 +39,7 @@ const viewAllEmployees = () => {
         })
 };
 
+// SAME WITH THIS. NEED TO REWRITE, AND AT LEAST MOVE INTO THE QUERIES FILE
 const viewEmployeesByDepartment = () => {
     conn.query(`SELECT * FROM deps`, (err, table) => {
         if (err) throw err;
@@ -145,7 +148,6 @@ const addEmployee = async () => {
             choices: managers,
             name: "manager"
         }
-        // can probably merge these two into one function, since they work together
     ]).then(
         async (data) => {
             const {
@@ -191,22 +193,6 @@ const deleteEmployee = async () => {
     })
 }
 
-const updateEmployeeRole = async (data) => {
-    const role_id = await sqlQueries.getRoleID(data.role)
-    const employee_id = await sqlQueries.getEmployeeID(data.employee);
-    const newEmployeeRole = {
-        id: employee_id,
-        role_id: role_id
-    }
-    sqlQueries.updateEmployeeRole(newEmployeeRole).then(success => {
-        console.log(success);
-        init();
-    }, rejected => {
-        console.log(rejected);
-        process.exit();
-    });
-}
-
 const chooseEmployeeUpdates = async () => {
     const employees = await sqlQueries.getEmployeeNames();
     const roles = await sqlQueries.getRoles();
@@ -222,7 +208,23 @@ const chooseEmployeeUpdates = async () => {
             choices: roles,
             name: "role"
         }
-    ]).then(update => updateEmployeeRole(update));
+    ]).then(
+        async (data) => {
+            const role_id = await sqlQueries.getRoleID(data.role)
+            const employee_id = await sqlQueries.getEmployeeID(data.employee);
+            const newEmployeeRole = {
+                id: employee_id,
+                role_id: role_id
+            }
+            sqlQueries.updateEmployeeRole(newEmployeeRole).then(success => {
+                console.log(success);
+                init();
+            }, rejected => {
+                console.log(rejected);
+                process.exit();
+            });
+        }
+    );
 }
 
 const init = () => {
