@@ -1,5 +1,6 @@
 const {
-    table
+    table,
+    Console
 } = require('console');
 const {
     resolveCname
@@ -8,6 +9,9 @@ const {
     promises
 } = require('fs');
 const mysql = require('mysql');
+const {
+    resolve
+} = require('path');
 const {
     async
 } = require('rxjs');
@@ -109,28 +113,36 @@ const getRoleID = async (roleTitle) => {
 }
 
 const addEmployeeToDB = (employeeOBJ) => {
-    const {
-        First_name,
-        Last_name,
-        role_id,
-        Manager
-    } = employeeOBJ;
-    conn.query(`INSERT INTO employees (First_name, Last_name, role_id, Manager)
-                VALUES ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
-        (err, dbRes) => {
-            if (err) throw err;
-            console.log(dbRes.affectedRows)
-        })
+    return new Promise((resolve, reject) => {
+        const {
+            First_name,
+            Last_name,
+            role_id,
+            Manager
+        } = employeeOBJ;
+        conn.query(`INSERT INTO employees (First_name, Last_name, role_id, Manager)
+                    VALUES ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
+            (err, dbRes) => {
+                if (err) reject(err);
+                resolve("Employee added!")
+            })
+    })
 }
 
 const deleteEmployee = (employeeFullName) => {
-    console.log(employeeFullName);
-    conn.query(`DELETE FROM employees e
+    return new Promise((resolve, reject) => {
+        console.log(employeeFullName);
+        conn.query(`DELETE FROM employees e
                 WHERE
                 CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
-        (err, dbRes) => {
-            if (err) console.log("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")
-        })
+            (err, dbRes) => {
+                if (err) {
+                    console.log("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")
+                    reject(err)
+                }
+                resolve("Employee Deleted!")
+            })
+    })
 }
 
 const getEmployeeNames = async () => {
@@ -160,15 +172,16 @@ const getEmployeeID = async (employeeName) => {
     })
 }
 
-const updateEmployeeRole = (newEmployeeRole) => {
-    console.log(newEmployeeRole);
-    conn.query(`UPDATE employees e
+const updateEmployeeRole = async (newEmployeeRole) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`UPDATE employees e
                 SET role_id = ${newEmployeeRole.role_id}
                 WHERE id = ${newEmployeeRole.id}`,
-        (err, res) => {
-            if (err) throw err;
-            console.log(res.affectedRows)
-        })
+            (err, updateRes) => {
+                if (err) reject(err);
+                resolve("Role updated!")
+            })
+    })
 }
 
 

@@ -119,28 +119,9 @@ const viewEmployeesByDepartment = () => {
 //         })
 // };
 
-const addEmployee = async (data) => {
-    const {
-        First_name,
-        Last_name,
-        role,
-        manager
-    } = data;
 
-    if (manager === "None") {
-        manager_id = null
-    } else {
-        manager_id = await sqlQueries.getManagerID(manager);
-    }
-    const role_id = await sqlQueries.getRoleID(role);
-    const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
-    sqlQueries.addEmployeeToDB(newEmployee)
-    setTimeout(() => {
-        init();
-    }, 100);
-}
 
-const buildEmployee = async () => {
+const addEmployee = async () => {
     let roles = await sqlQueries.getRoles();
     let managers = await sqlQueries.getManagers();
     managers.push("None");
@@ -164,7 +145,32 @@ const buildEmployee = async () => {
             choices: managers,
             name: "manager"
         }
-    ]).then(data => addEmployee(data))
+        // can probably merge these two into one function, since they work together
+    ]).then(
+        async (data) => {
+            const {
+                First_name,
+                Last_name,
+                role,
+                manager
+            } = data;
+
+            if (manager === "None") {
+                manager_id = null
+            } else {
+                manager_id = await sqlQueries.getManagerID(manager);
+            }
+            const role_id = await sqlQueries.getRoleID(role);
+            const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
+            sqlQueries.addEmployeeToDB(newEmployee).then(success => {
+                console.log(success);
+                init();
+            }, rejected => {
+                console.log(rejected);
+                process.exit();
+            })
+        }
+    )
 }
 
 const deleteEmployee = async () => {
@@ -175,10 +181,13 @@ const deleteEmployee = async () => {
         choices: employees,
         name: "choice"
     }]).then(your => {
-        sqlQueries.deleteEmployee(your.choice);
-        setTimeout(() => {
-            init();
-        }, 100);
+        sqlQueries.deleteEmployee(your.choice).then(success => {
+            console.log(success);
+            init()
+        }, rejected => {
+            console.log(rejected)
+            process.exit();
+        });
     })
 }
 
@@ -189,7 +198,13 @@ const updateEmployeeRole = async (data) => {
         id: employee_id,
         role_id: role_id
     }
-    sqlQueries.updateEmployeeRole(newEmployeeRole);
+    sqlQueries.updateEmployeeRole(newEmployeeRole).then(success => {
+        console.log(success);
+        init();
+    }, rejected => {
+        console.log(rejected);
+        process.exit();
+    });
 }
 
 const chooseEmployeeUpdates = async () => {
@@ -203,7 +218,7 @@ const chooseEmployeeUpdates = async () => {
         },
         {
             type: "list",
-            message: "Which role should they have?",
+            message: "What should their new role be?",
             choices: roles,
             name: "role"
         }
@@ -215,37 +230,39 @@ const init = () => {
         type: "list",
         message: "What would you like to do?",
         choices: [
-            `View ${chalk.green("all")} employees`,
-            `View employees by ${chalk.cyanBright("Department")}`,
-            // `View employees by ${chalk.magentaBright("Manager")}`,
+            `${chalk.cyan("View")} all employees`,
+            `${chalk.cyan("View")} employees by Department`,
+            // `${chalk.cyan("View")} employees by Manager`,
             `${chalk.green("Add")} employee`,
             `${chalk.redBright("Remove")} employee`,
-            `Update employee role`,
-            `Update employee Manager`,
-            "EXIT"
+            `${chalk.green("Add")} Department`,
+            `${chalk.green("Add")} Role`,
+            `${chalk.bgMagentaBright("Update")} employee role`,
+            `${chalk.bgMagentaBright("Update")} employee Manager`,
+            `${chalk.bgRedBright("EXIT")}`
         ],
         name: "action"
     }]).then(your => {
         switch (your.action) {
-            case `View ${chalk.green("all")} employees`:
+            case `${chalk.cyan("View")} all employees`:
                 viewAllEmployees();
                 break;
-            case `View employees by ${chalk.cyanBright("Department")}`:
+            case `${chalk.cyan("View")} employees by Department`:
                 viewEmployeesByDepartment();
                 break;
-            case `View employees by ${chalk.magentaBright("Manager")}`:
+            case `${chalk.cyan("View")} employees by Manager`:
                 viewEmployeesByManager();
                 break;
             case `${chalk.green("Add")} employee`:
-                buildEmployee();
+                addEmployee();
                 break;
             case `${chalk.redBright("Remove")} employee`:
                 deleteEmployee();
                 break;
-            case "Update employee role":
+            case `${chalk.bgMagentaBright("Update")} employee role`:
                 chooseEmployeeUpdates();
                 break;
-            case "Update employee Manager":
+            case `${chalk.bgMagentaBright("Update")} employee Manager`:
                 console.log("update manager")
                 break;
             default:
