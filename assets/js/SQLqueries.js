@@ -108,10 +108,26 @@ const getRoleID = async (roleTitle) => {
     })
 }
 
+const addEmployeeToDB = (employeeOBJ) => {
+    const {
+        First_name,
+        Last_name,
+        role_id,
+        Manager
+    } = employeeOBJ;
+    conn.query(`INSERT INTO employees (First_name, Last_name, role_id, Manager)
+                VALUES ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
+        (err, dbRes) => {
+            if (err) throw err;
+            console.log(dbRes.affectedRows)
+        })
+}
+
 const print = async (callback) => {
     let data = await callback("Manager");
     console.log(data)
 }
+
 
 print(getRoleID)
 
@@ -130,25 +146,11 @@ print(getRoleID)
 //         }) => {
 //             console.log(manager);
 //             resolve();
-//         });
-//     });
-// }
-
-// const getManagers = () => {
-//     return new Promise((resolve, reject) => {
-//         connection.query(`SELECT CONCAT(b.first_name, " ", b.last_name) AS Name 
-//         FROM employee a LEFT JOIN employee b
-//         ON a.manager_id = b.id
-//         WHERE a.manager_id IS NOT NULL;`, (err, res) => {
-//             if (err) reject(err);
-//             resolve(res);
-//         });
-//     });
-// }
 
 module.exports = {
     getRoles: getRoles,
     getRoleID: getRoleID,
     getManagers: getManagers,
     getManagerID: getManagerID,
+    addEmployeeToDB: addEmployeeToDB,
 }

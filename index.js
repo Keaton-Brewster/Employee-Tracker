@@ -127,17 +127,21 @@ const addEmployee = async (data) => {
         role,
         manager
     } = data;
-    const managerID = await sqlQueries.getManagerID(manager);
-    const roleID = await sqlQueries.getRoleID(role);
-    const newEmployee = new Employee(First_name, Last_name, role, managerID);
-    console.log(newEmployee);
-    //killing process for now.
-    process.exit();
+
+    if (manager === "None") {
+        manager_id = null
+    } else {
+        manager_id = await sqlQueries.getManagerID(manager);
+    }
+    const role_id = await sqlQueries.getRoleID(role);
+    const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
+    sqlQueries.addEmployeeToDB(newEmployee)
 }
 
 const buildEmployee = async () => {
     let roles = await sqlQueries.getRoles();
     let managers = await sqlQueries.getManagers();
+    managers.push("None");
     console.log(roles);
     inquire.prompt([{
             message: "What is the employees first name?",
