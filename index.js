@@ -25,7 +25,8 @@ const viewAllEmployees = () => {
                 INNER JOIN deps d
                 ON r.department_id = d.id
                 LEFT JOIN employees m
-                ON m.id = e.Manager`,
+                ON m.id = e.Manager
+                ORDER BY id`,
 
         (err, table) => {
             if (err) throw err;
@@ -232,39 +233,39 @@ const init = () => {
         type: "list",
         message: "What would you like to do?",
         choices: [
-            `${chalk.cyan("View")} all employees`,
-            `${chalk.cyan("View")} employees by Department`,
-            // `${chalk.cyan("View")} employees by Manager`,
-            `${chalk.green("Add")} employee`,
-            `${chalk.redBright("Remove")} employee`,
-            `${chalk.green("Add")} Department`,
-            `${chalk.green("Add")} Role`,
-            `${chalk.bgMagentaBright("Update")} employee role`,
-            `${chalk.bgMagentaBright("Update")} employee Manager`,
+            `${chalk.cyan("View all employees")}`,
+            `${chalk.cyan("View employees by Department")}`,
+            `${chalk.cyan("View employees by Manager")}`,
+            `${chalk.green("Add Employee")}`,
+            `${chalk.redBright("Remove employee")}`,
+            `${chalk.green("Add Department")}`,
+            `${chalk.green("Add Role")}`,
+            `${chalk.bgMagentaBright("Update Employee Role")}`,
+            `${chalk.bgMagentaBright("Update Employee Manager")}`,
             `${chalk.bgRedBright("EXIT")}`
         ],
         name: "action"
     }]).then(your => {
         switch (your.action) {
-            case `${chalk.cyan("View")} all employees`:
+            case `${chalk.cyan("View all employees")}`:
                 viewAllEmployees();
                 break;
-            case `${chalk.cyan("View")} employees by Department`:
+            case `${chalk.cyan("View employees by Department")}`:
                 viewEmployeesByDepartment();
                 break;
-            case `${chalk.cyan("View")} employees by Manager`:
+            case `${chalk.cyan("View employees by Manager")}`:
                 viewEmployeesByManager();
                 break;
-            case `${chalk.green("Add")} employee`:
+            case `${chalk.green("Add Employee")}`:
                 addEmployee();
                 break;
-            case `${chalk.redBright("Remove")} employee`:
+            case `${chalk.redBright("Remove employee")}`:
                 deleteEmployee();
                 break;
-            case `${chalk.bgMagentaBright("Update")} employee role`:
+            case `${chalk.bgMagentaBright("Update Employee Role")}`:
                 chooseEmployeeUpdates();
                 break;
-            case `${chalk.bgMagentaBright("Update")} employee Manager`:
+            case `${chalk.bgMagentaBright("Update Employee Manager")}`:
                 console.log("update manager")
                 break;
             default:
