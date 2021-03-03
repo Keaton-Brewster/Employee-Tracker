@@ -144,9 +144,38 @@ const getEmployeeNames = async () => {
     })
 }
 
-const updateEmployeeRole = async (newEmployeeRole) => {
-    console.log(newEmployeeRole)
+
+
+
+
+const getEmployeeID = async (employeeName) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT id FROM employees
+                    WHERE CONCAT(First_name, " ", Last_name)
+                    = "${employeeName}"`, (err, table) => {
+            if (err) reject(err);
+            table = table.map(col => col.id)
+            resolve(table)
+        })
+    })
 }
+
+const updateEmployeeRole = (newEmployeeRole) => {
+    console.log(newEmployeeRole);
+    conn.query(`UPDATE employees e
+                SET role_id = ${newEmployeeRole.role_id}
+                WHERE id = ${newEmployeeRole.id}`,
+        (err, res) => {
+            if (err) throw err;
+            console.log(res.affectedRows)
+        })
+}
+
+
+
+
+
+
 
 const print = async (callback) => {
     let data = await callback("Manager");
@@ -180,5 +209,6 @@ module.exports = {
     addEmployeeToDB: addEmployeeToDB,
     deleteEmployee: deleteEmployee,
     getEmployeeNames: getEmployeeNames,
+    getEmployeeID: getEmployeeID,
     updateEmployeeRole: updateEmployeeRole,
 }

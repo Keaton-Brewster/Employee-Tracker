@@ -184,9 +184,9 @@ const deleteEmployee = async () => {
 
 const updateEmployeeRole = async (data) => {
     const role_id = await sqlQueries.getRoleID(data.role)
-    console.log(`${data.employee}, ${role_id}`)
+    const employee_id = await sqlQueries.getEmployeeID(data.employee);
     const newEmployeeRole = {
-        full_name: data.employee,
+        id: employee_id,
         role_id: role_id
     }
     sqlQueries.updateEmployeeRole(newEmployeeRole);
