@@ -1,21 +1,9 @@
-const mysql = require('mysql');
 const inquire = require('inquirer');
 const chalk = require('chalk');
 const sqlQueries = require('./assets/js/SQLqueries');
 const Employee = require('./assets/js/Employee');
 const Role = require('./assets/js/Role')
 require('console.table')
-
-const config = {
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'KeatonDev42420',
-    database: 'employeeManager',
-};
-
-const conn = mysql.createConnection(config);
-
 
 const viewAllEmployees = () => {
     sqlQueries.viewAllEmployees().then(table => {
@@ -26,7 +14,7 @@ const viewAllEmployees = () => {
     })
 };
 
-const viewAllDepartments = async () => {
+const viewAllDepartments = () => {
     sqlQueries.viewAllDepartments()
         .then(table => {
             console.table(table);
@@ -39,46 +27,62 @@ const viewAllDepartments = async () => {
 
 const viewEmployeesByDepartment = async () => {
     const departments = await sqlQueries.getDepartments();
+    departments.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt({
         type: 'list',
         message: 'Which department would you like to view?',
         choices: departments,
         name: 'choice'
-    }).then(async (prompt) => {
-        sqlQueries.viewEmployeesByDepartment(prompt.choice)
-            .then(success => {
-                    console.table(success);
-                    init();
-                },
-                rejection => {
-                    throw rejection
-                });
-    })
+    }).then(
+        async (prompt) => {
+            if (prompt.choice == `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu')
+                init();
+            } else {
+                sqlQueries.viewEmployeesByDepartment(prompt.choice)
+                    .then(success => {
+                            console.table(success);
+                            init();
+                        },
+                        rejection => {
+                            throw rejection
+                        });
+            }
+        })
 };
 
 const viewEmployeesByManager = async () => {
     const managers = await sqlQueries.getManagers();
+    managers.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt({
         type: 'list',
         message: 'Whose employees would you like to view?',
         choices: managers,
         name: "choice"
-    }).then(async (prompt) => {
-        sqlQueries.getManagerID(prompt.choice)
-            .then(manager_id => sqlQueries.viewEmployeesByManager(manager_id))
-            .then(table => {
-                console.table(table)
+    }).then(
+        async (prompt) => {
+            if (prompt.choice === `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu')
                 init();
-            }, rejection => {
-                throw rejection;
-            })
-    })
+            } else {
+                sqlQueries.getManagerID(prompt.choice)
+                    .then(manager_id => sqlQueries.viewEmployeesByManager(manager_id))
+                    .then(table => {
+                        console.table(table)
+                        init();
+                    }, rejection => {
+                        throw rejection;
+                    })
+            }
+        })
 }
 
 const addEmployee = async () => {
     let roles = await sqlQueries.getRoles();
     let managers = await sqlQueries.getManagers();
     managers.push("None");
+    roles.push(`${chalk.bgYellow('GO BACK')}`);
+    managers.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt([{
             message: "What is the employees first name?",
             name: "First_name"
@@ -101,48 +105,60 @@ const addEmployee = async () => {
         }
     ]).then(
         async (prompt) => {
-            const {
-                First_name,
-                Last_name,
-                role,
-                manager
-            } = prompt;
-
-            if (manager === "None") {
-                manager_id = null
+            if (prompt.role == `${chalk.bgYellow('GO BACK')}` ||
+                prompt.manager == `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu')
+                init();
             } else {
-                manager_id = await sqlQueries.getManagerID(manager);
+                const {
+                    First_name,
+                    Last_name,
+                    role,
+                    manager
+                } = prompt;
+
+                if (manager === "None") {
+                    manager_id = null
+                } else {
+                    manager_id = await sqlQueries.getManagerID(manager);
+                }
+                const role_id = await sqlQueries.getRoleID(role);
+                const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
+                sqlQueries.addEmployee(newEmployee)
+                    .then(success => {
+                        console.log(success);
+                        init();
+                    }, rejection => {
+                        throw rejection;
+                    })
             }
-            const role_id = await sqlQueries.getRoleID(role);
-            const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
-            sqlQueries.addEmployee(newEmployee)
-                .then(success => {
-                    console.log(success);
-                    init();
-                }, rejection => {
-                    throw rejection;
-                })
-        }
-    )
+        })
 }
 
 const deleteEmployee = async () => {
     const employees = await sqlQueries.getEmployeeNames();
+    employees.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt({
         type: 'list',
         message: "Which employee would you like to delete?",
         choices: employees,
         name: "choice"
-    }).then(prompt => {
-        sqlQueries.deleteEmployee(prompt.choice)
-            .then(success => {
-                console.log(success);
-                init()
-            });
-    })
+    }).then(
+        prompt => {
+            if (prompt.choice === `${chalk.bgYellow('GO BACK')}`) {
+                console.log("Returning to menu");
+                init();
+            } else {
+                sqlQueries.deleteEmployee(prompt.choice)
+                    .then(success => {
+                        console.log(success);
+                        init()
+                    });
+            }
+        })
 }
 
-const addDepartment = async () => {
+const addDepartment = () => {
     inquire.prompt({
         message: "What is the new department you want to add?",
         name: "choice"
@@ -177,6 +193,7 @@ const deleteDepartment = async () => {
 
 const addRole = async () => {
     const departments = await sqlQueries.getDepartments();
+    departments.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt([{
             message: 'What is the title of the role you would like to add?',
             name: 'title'
@@ -192,27 +209,35 @@ const addRole = async () => {
             choices: departments,
             name: 'department'
         }
-    ]).then(async (prompt) => {
-        let {
-            title,
-            salary,
-            department
-        } = prompt;
-        const department_id = await sqlQueries.getDepartmentID(department);
-        const roleToAdd = new Role(title, salary, department_id)
-        sqlQueries.addRole(roleToAdd)
-            .then(success => {
-                console.log(success);
-                init()
-            }, rejection => {
-                throw rejection
-            })
-    })
+    ]).then(
+        async (prompt) => {
+            if (prompt.department === `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu');
+                init();
+            } else {
+                let {
+                    title,
+                    salary,
+                    department
+                } = prompt;
+                const department_id = await sqlQueries.getDepartmentID(department);
+                const roleToAdd = new Role(title, salary, department_id)
+                sqlQueries.addRole(roleToAdd)
+                    .then(success => {
+                        console.log(success);
+                        init()
+                    }, rejection => {
+                        throw rejection
+                    })
+            }
+        })
 }
 
 const updateEmployeeRole = async () => {
     const employees = await sqlQueries.getEmployeeNames();
     const roles = await sqlQueries.getRoles();
+    employees.push(`${chalk.bgYellow('GO BACK')}`);
+    roles.push(`${chalk.bgYellow('GO BACK')}`)
     inquire.prompt([{
             type: "list",
             message: "Which employee do you need to update?",
@@ -227,19 +252,25 @@ const updateEmployeeRole = async () => {
         }
     ]).then(
         async (prompt) => {
-            const role_id = await sqlQueries.getRoleID(prompt.role)
-            const employee_id = await sqlQueries.getEmployeeID(prompt.employee);
-            const newEmployeeRole = {
-                id: employee_id,
-                role_id: role_id
+            if (prompt.employee === `${chalk.bgYellow('GO BACK')}` ||
+                prompt.role === `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu');
+                init();
+            } else {
+                const role_id = await sqlQueries.getRoleID(prompt.role)
+                const employee_id = await sqlQueries.getEmployeeID(prompt.employee);
+                const newEmployeeRole = {
+                    id: employee_id,
+                    role_id: role_id
+                }
+                sqlQueries.updateEmployeeRole(newEmployeeRole)
+                    .then(success => {
+                        console.log(success);
+                        init();
+                    }, rejection => {
+                        throw rejection;
+                    });
             }
-            sqlQueries.updateEmployeeRole(newEmployeeRole)
-                .then(success => {
-                    console.log(success);
-                    init();
-                }, rejection => {
-                    throw rejection;
-                });
         }
     );
 }
@@ -247,6 +278,8 @@ const updateEmployeeRole = async () => {
 const updateEmployeeManager = async () => {
     const employees = await sqlQueries.getEmployeeNames();
     const managers = await sqlQueries.getManagers();
+    employees.push(`${chalk.bgYellow('GO BACK')}`);
+    managers.push(`${chalk.bgYellow('GO BACK')}`);
     inquire.prompt([{
             type: 'list',
             message: 'Which employee do you need to update?',
@@ -259,21 +292,28 @@ const updateEmployeeManager = async () => {
             choices: managers,
             name: 'manager'
         }
-    ]).then(async (prompt) => {
-        const employee_id = await sqlQueries.getEmployeeID(prompt.employee);
-        const manager_id = await sqlQueries.getManagerID(prompt.manager);
-        const employeesNewManager = {
-            employee_id: employee_id,
-            manager_id: manager_id
-        }
-        sqlQueries.updateEmployeeManager(employeesNewManager)
-            .then(success => {
-                console.log(success);
+    ]).then(
+        async (prompt) => {
+            if (prompt.employee === `${chalk.bgYellow('GO BACK')}` ||
+                prompt.manager === `${chalk.bgYellow('GO BACK')}`) {
+                console.log('Returning to menu');
                 init();
-            }, rejection => {
-                throw rejection
-            })
-    })
+            } else {
+                const employee_id = await sqlQueries.getEmployeeID(prompt.employee);
+                const manager_id = await sqlQueries.getManagerID(prompt.manager);
+                const employeesNewManager = {
+                    employee_id: employee_id,
+                    manager_id: manager_id
+                }
+                sqlQueries.updateEmployeeManager(employeesNewManager)
+                    .then(success => {
+                        console.log(success);
+                        init();
+                    }, rejection => {
+                        throw rejection
+                    })
+            }
+        })
 }
 
 const init = () => {
