@@ -13,14 +13,21 @@ const conn = mysql.createConnection(config);
 
 const viewAllEmployees = () => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+        conn.query(`SELECT e.id,
+                           e.First_name,
+                           e.Last_name,
+                           Title,
+                           Salary,
+                           Department,
+                           CONCAT(m.First_name, " ", m.Last_name) 
+                            as Manager 
                     FROM employees e
                     INNER JOIN roles r
-                    ON e.role_id = r.role_id
+                     ON e.role_id = r.role_id
                     INNER JOIN deps d
-                    ON r.department_id = d.id
+                     ON r.department_id = d.id
                     LEFT JOIN employees m
-                    ON m.id = e.Manager
+                     ON m.id = e.Manager
                     ORDER BY id`,
             (err, table) => {
                 if (err) reject(err);
@@ -32,6 +39,21 @@ const viewAllEmployees = () => {
 const viewAllDepartments = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT Department FROM deps`,
+            (err, table) => {
+                if (err) reject(err);
+                resolve(table)
+            })
+    })
+}
+
+const viewAllRoles = () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT title as Title,
+                           salary as Salary,
+                           Department as Department
+                    FROM roles r
+                    LEFT JOIN deps d
+                     ON r.department_id = d.id`,
             (err, table) => {
                 if (err) reject(err);
                 resolve(table)
@@ -64,14 +86,21 @@ const getDepartmentID = (departmentName) => {
 
 const viewEmployeesByDepartment = (department) => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+        conn.query(`SELECT e.id,
+                           e.First_name,
+                           e.Last_name,
+                           Title,
+                           Salary,
+                           Department, 
+                           CONCAT(m.First_name, " ", m.Last_name) 
+                             as Manager 
                 FROM employees e
                 INNER JOIN roles r
-                ON e.role_id = r.role_id
+                 ON e.role_id = r.role_id
                 INNER JOIN deps d
-                ON r.department_id = d.id
+                 ON r.department_id = d.id
                 LEFT JOIN employees m
-                ON m.id = e.Manager
+                 ON m.id = e.Manager
                 WHERE d.Department = "${department}"`,
             (err, table) => {
                 if (err) reject(err);
@@ -82,10 +111,11 @@ const viewEmployeesByDepartment = (department) => {
 
 const getManagers = () => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT CONCAT(e.First_name," ",e.Last_name) as NAME
+        conn.query(`SELECT CONCAT(e.First_name," ",e.Last_name) 
+                     as NAME
                     FROM employees e
                     INNER JOIN roles r
-                    ON e.role_id = r.role_id
+                     ON e.role_id = r.role_id
                     AND r.title = "Manager"`,
             (err, table) => {
                 if (err) reject(err);
@@ -284,6 +314,7 @@ const print = async (callback) => {
 module.exports = {
     viewAllEmployees: viewAllEmployees,
     viewAllDepartments: viewAllDepartments,
+    viewAllRoles: viewAllRoles,
     getRoles: getRoles,
     getRoleID: getRoleID,
     getManagers: getManagers,

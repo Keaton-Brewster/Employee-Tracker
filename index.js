@@ -24,6 +24,15 @@ const viewAllDepartments = () => {
         })
 }
 
+const viewAllRoles = () => {
+    sqlQueries.viewAllRoles()
+        .then(table => {
+            console.table(table)
+            init();
+        }, rejection => {
+            throw rejection
+        })
+}
 
 const viewEmployeesByDepartment = async () => {
     const departments = await sqlQueries.getDepartments();
@@ -321,14 +330,15 @@ const init = () => {
         type: "list",
         message: `${chalk.yellow("What would you like to do?")}`,
         choices: [
-            `${chalk.cyan("View all employees")}`,
-            `${chalk.cyan("View employees by Department")}`,
-            `${chalk.cyan("View employees by Manager")}`,
+            `${chalk.cyan("View all Employees")}`,
+            `${chalk.cyan("View Employees by Department")}`,
+            `${chalk.cyan("View Employees by Manager")}`,
             `${chalk.green("Add Employee")}`,
-            `${chalk.redBright("Remove employee")}`,
-            `${chalk.cyan("View all departments")}`,
+            `${chalk.redBright("DELETE Employee")}`,
+            `${chalk.cyan("View all Departments")}`,
             `${chalk.green("Add Department")}`,
-            `${chalk.redBright("Remove department")}`,
+            `${chalk.redBright("DELETE Department")}`,
+            `${chalk.cyan('View all Roles')}`,
             `${chalk.green("Add Role")}`,
             `${chalk.magentaBright("Update Employee Role")}`,
             `${chalk.magentaBright("Update Employee Manager")}`,
@@ -337,39 +347,54 @@ const init = () => {
         name: "action"
     }]).then(prompt => {
         switch (prompt.action) {
-            case `${chalk.cyan("View all employees")}`:
+            case `${chalk.cyan("View all Employees")}`:
                 viewAllEmployees();
                 break;
-            case `${chalk.cyan("View employees by Department")}`:
+
+            case `${chalk.cyan("View Employees by Department")}`:
                 viewEmployeesByDepartment();
                 break;
-            case `${chalk.cyan("View employees by Manager")}`:
+
+            case `${chalk.cyan("View Employees by Manager")}`:
                 viewEmployeesByManager();
                 break;
+
             case `${chalk.green("Add Employee")}`:
                 addEmployee();
                 break;
-            case `${chalk.redBright("Remove employee")}`:
+
+            case `${chalk.redBright("DELETE Employee")}`:
                 deleteEmployee();
                 break;
-            case `${chalk.cyan("View all departments")}`:
+
+            case `${chalk.cyan("View all Departments")}`:
                 viewAllDepartments();
                 break;
+
             case `${chalk.green("Add Department")}`:
                 addDepartment();
                 break;
-            case `${chalk.redBright("Remove department")}`:
+
+            case `${chalk.redBright("DELETE Department")}`:
                 deleteDepartment();
                 break;
+
+            case `${chalk.cyan('View all Roles')}`:
+                viewAllRoles();
+                break;
+
             case `${chalk.green("Add Role")}`:
                 addRole();
                 break;
+
             case `${chalk.magentaBright("Update Employee Role")}`:
                 updateEmployeeRole();
                 break;
+
             case `${chalk.magentaBright("Update Employee Manager")}`:
                 updateEmployeeManager();
                 break;
+
             default:
                 process.exit();
         }
