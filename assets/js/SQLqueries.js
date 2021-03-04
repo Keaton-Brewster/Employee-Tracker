@@ -1,26 +1,4 @@
-const {
-    table,
-    Console
-} = require('console');
-const {
-    resolveCname
-} = require('dns');
-const {
-    promises
-} = require('fs');
 const mysql = require('mysql');
-const {
-    resolve
-} = require('path');
-const {
-    async
-} = require('rxjs');
-const {
-    OuterSubscriber
-} = require('rxjs/internal/OuterSubscriber');
-const {
-    inherits
-} = require('util');
 
 const config = {
     host: 'localhost',
@@ -32,44 +10,34 @@ const config = {
 
 const conn = mysql.createConnection(config);
 
-
-
-
-
-// const allRoles = (() => {
-//     let allRoles = [];
-
-//     conn.query('SELECT role_id,title,salary FROM roles', (err, table) => {
-//         if (err) throw err;
-//         allRoles = table
-//     }).then(() => {
-//         allRoles = allRoles.map(({
-//                 role_id,
-//                 title,
-//                 salary
-//             }) =>
-//             ({
-//                 id: role_id,
-//                 title: `${title}`,
-//                 salary: `${salary}`
-//             })
-//         )
-//     });
-
-//     return allRoles
-
-// })();
-
-
-const getRoles = async () => {
+const getDepartments = async () => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT title FROM roles`, (err, table) => {
-            if (err) reject(err);
-            table = table.map(col => col.title)
-            resolve(table);
-        })
+        conn.query(`SELECT Department FROM deps`,
+            (err, table) => {
+                if (err) reject(err);
+                table = table.map(col => col.Department)
+                resolve(table)
+            })
     })
-};
+}
+
+const viewEmployeesByDepartment = async (department) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+                FROM employees e
+                INNER JOIN roles r
+                ON e.role_id = r.role_id
+                INNER JOIN deps d
+                ON r.department_id = d.id
+                LEFT JOIN employees m
+                ON m.id = e.Manager
+                WHERE d.Department = "${department}"`,
+            (err, table) => {
+                if (err) reject(err);
+                resolve(table)
+            })
+    })
+}
 
 const getManagers = async () => {
     return new Promise((resolve, reject) => {
@@ -77,11 +45,12 @@ const getManagers = async () => {
                     FROM employees e
                     INNER JOIN roles r
                     ON e.role_id = r.role_id
-                    AND r.title = "Manager"`, (err, table) => {
-            if (err) reject(err);
-            table = table.map(col => col.NAME)
-            resolve(table)
-        })
+                    AND r.title = "Manager"`,
+            (err, table) => {
+                if (err) reject(err);
+                table = table.map(col => col.NAME)
+                resolve(table)
+            })
     })
 }
 
@@ -99,20 +68,50 @@ const getManagerID = async (managerName) => {
     })
 }
 
-const getRoleID = async (roleTitle) => {
+const viewEmployeesByManager = async (manager_id) => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT role_id FROM roles
-                    WHERE ?`, {
-            title: roleTitle
-        }, (err, table) => {
+        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+                    FROM employees e
+                    INNER JOIN roles r
+                    ON e.role_id = r.role_id
+                    INNER JOIN deps d
+                    ON r.department_id = d.id
+                    LEFT JOIN employees m
+                    ON m.id = e.Manager
+                    WHERE e.Manager = ${manager_id}
+                    ORDER BY id`, (err, table) => {
             if (err) reject(err);
-            table = table.map(col => col.role_id)
             resolve(table)
         })
     })
 }
 
-const addEmployeeToDB = (employeeOBJ) => {
+const getRoles = async () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT title FROM roles`,
+            (err, table) => {
+                if (err) reject(err);
+                table = table.map(col => col.title)
+                resolve(table);
+            })
+    })
+};
+
+const getRoleID = async (roleTitle) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT role_id FROM roles
+                    WHERE ?`, {
+                title: roleTitle
+            },
+            (err, table) => {
+                if (err) reject(err);
+                table = table.map(col => col.role_id)
+                resolve(table)
+            })
+    })
+}
+
+const addEmployee = (employeeOBJ) => {
     return new Promise((resolve, reject) => {
         const {
             First_name,
@@ -122,7 +121,7 @@ const addEmployeeToDB = (employeeOBJ) => {
         } = employeeOBJ;
         conn.query(`INSERT INTO employees (First_name, Last_name, role_id, Manager)
                     VALUES ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
-            (err, dbRes) => {
+            (err) => {
                 if (err) reject(err);
                 resolve("Employee added!")
             })
@@ -135,7 +134,7 @@ const deleteEmployee = (employeeFullName) => {
         conn.query(`DELETE FROM employees e
                 WHERE
                 CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
-            (err, dbRes) => {
+            (err) => {
                 if (err) {
                     console.log("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")
                     reject(err)
@@ -145,30 +144,39 @@ const deleteEmployee = (employeeFullName) => {
     })
 }
 
-const getEmployeeNames = async () => {
+const addDepartment = async (department) => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
-                AS name FROM employees e`, (err, table) => {
-            if (err) reject(err);
-            table.map(col => col.name)
-            resolve(table)
-        })
+        conn.query(`INSERT INTO deps (Department)
+                    VALUES("${department}")`,
+            (err) => {
+                if (err) reject(err)
+                resolve("Department added!")
+            })
     })
 }
 
-
-
-
+const getEmployeeNames = async () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
+                AS name FROM employees e`,
+            (err, table) => {
+                if (err) reject(err);
+                table.map(col => col.name)
+                resolve(table)
+            })
+    })
+}
 
 const getEmployeeID = async (employeeName) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT id FROM employees
                     WHERE CONCAT(First_name, " ", Last_name)
-                    = "${employeeName}"`, (err, table) => {
-            if (err) reject(err);
-            table = table.map(col => col.id)
-            resolve(table)
-        })
+                    = "${employeeName}"`,
+            (err, table) => {
+                if (err) reject(err)
+                table = table.map(col => col.id);
+                resolve(table)
+            })
     })
 }
 
@@ -177,17 +185,12 @@ const updateEmployeeRole = async (newEmployeeRole) => {
         conn.query(`UPDATE employees e
                 SET role_id = ${newEmployeeRole.role_id}
                 WHERE id = ${newEmployeeRole.id}`,
-            (err, updateRes) => {
+            (err) => {
                 if (err) reject(err);
                 resolve("Role updated!")
             })
     })
 }
-
-
-
-
-
 
 
 const print = async (callback) => {
@@ -196,32 +199,18 @@ const print = async (callback) => {
 }
 
 
-print(getRoleID)
-
-
-// const viewEmployeesByManager = async () => {
-//     let choices = await employeeDB_CRUD.getManagers();
-//     console.log(choices);
-//     return new Promise((resolve, reject) => {
-//         inquirer.prompt([{
-//             name: "manager",
-//             type: "list",
-//             message: "Please select a department: ",
-//             choices: choices
-//         }]).then(({
-//             manager
-//         }) => {
-//             console.log(manager);
-//             resolve();
-
 module.exports = {
     getRoles: getRoles,
     getRoleID: getRoleID,
     getManagers: getManagers,
     getManagerID: getManagerID,
-    addEmployeeToDB: addEmployeeToDB,
+    addEmployee: addEmployee,
     deleteEmployee: deleteEmployee,
     getEmployeeNames: getEmployeeNames,
     getEmployeeID: getEmployeeID,
     updateEmployeeRole: updateEmployeeRole,
+    viewEmployeesByManager: viewEmployeesByManager,
+    getDepartments: getDepartments,
+    viewEmployeesByDepartment: viewEmployeesByDepartment,
+    addDepartment: addDepartment,
 }

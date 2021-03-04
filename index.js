@@ -30,100 +30,52 @@ const viewAllEmployees = () => {
 
         (err, table) => {
             if (err) throw err;
-
-
             console.table(table)
-
             setTimeout(() => {
                 init();
             }, 100);
         })
 };
 
-// SAME WITH THIS. NEED TO REWRITE, AND AT LEAST MOVE INTO THE QUERIES FILE
-const viewEmployeesByDepartment = () => {
-    conn.query(`SELECT * FROM deps`, (err, table) => {
-        if (err) throw err;
 
-        let deps = []
-        table.forEach(column => {
-            deps.push(column.Department)
-        })
-
-        inquire.prompt([{
-            type: "list",
-            message: "Which department would you like to view?",
-            choices: deps,
-            name: "action"
-        }]).then(your => {
-            conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
-                        FROM employees e
-                        INNER JOIN roles r
-                        ON e.role_id = r.role_id
-                        INNER JOIN deps d
-                        ON r.department_id = d.id
-                        LEFT JOIN employees m
-                        ON m.id = e.Manager
-                        WHERE d.Department = "${your.action}"`,
-                (err, table) => {
-                    if (err) throw err;
-
-                    console.table(table)
-                    setTimeout(() => {
-                        init();
-                    }, 100);
-                })
-        })
+const viewEmployeesByDepartment = async () => {
+    const departments = await sqlQueries.getDepartments();
+    console.log(departments)
+    inquire.prompt({
+        type: 'list',
+        message: 'Which department would you like to view?',
+        choices: departments,
+        name: 'choice'
+    }).then(async (prompt) => {
+        sqlQueries.viewEmployeesByDepartment(prompt.choice)
+            .then(success => {
+                    console.table(success);
+                    init();
+                },
+                rejected => {
+                    throw rejected
+                });
     })
 };
 
-// const viewEmployeesByManager = () => {
-//     conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
-//                 FROM employees e
-//                 INNER JOIN roles r
-//                 ON e.role_id = r.role_id
-//                 INNER JOIN deps d
-//                 ON r.department_id = d.id
-//                 LEFT JOIN employees m
-//                 ON m.id = e.Manager 
-//                 WHERE e.role_id = 3`,
-//         (err, table) => {
-//             if (err) throw err;
-
-//             let choices = [];
-
-//             table.forEach(column => {
-//                 choices.push(`${column.First_name} ${column.Last_name}`)
-//             })
-
-//             inquire.prompt([{
-//                 type: "list",
-//                 message: "Who's employees would you like to view?",
-//                 choices: choices,
-//                 name: "action"
-//             }]).then(your => {
-//                 conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
-//                         FROM employees e
-//                         INNER JOIN roles r
-//                         ON e.role_id = r.role_id
-//                         INNER JOIN deps d
-//                         ON r.department_id = d.department_id
-//                         LEFT JOIN employees m
-//                         ON m.id = e.Manager 
-//                         WHERE Manager = "${your.action}"`,
-//                     (err, table) => {
-//                         if (err) throw err;
-
-//                         console.table(table)
-//                         setTimeout(() => {
-//                             init();
-//                         }, 300);
-//                     })
-//             })
-//         })
-// };
-
-
+const viewEmployeesByManager = async () => {
+    const managers = await sqlQueries.getManagers();
+    inquire.prompt({
+        type: 'list',
+        message: 'Whose employees would you like to view?',
+        choices: managers,
+        name: "choice"
+    }).then(async (prompt) => {
+        sqlQueries.getManagerID(prompt.choice)
+            .then(manager_id => sqlQueries.viewEmployeesByManager(manager_id))
+            .then(table => {
+                console.table(table)
+                init();
+            }, rejected => {
+                throw rejected;
+            })
+    })
+}
 
 const addEmployee = async () => {
     let roles = await sqlQueries.getRoles();
@@ -150,13 +102,13 @@ const addEmployee = async () => {
             name: "manager"
         }
     ]).then(
-        async (data) => {
+        async (prompt) => {
             const {
                 First_name,
                 Last_name,
                 role,
                 manager
-            } = data;
+            } = prompt;
 
             if (manager === "None") {
                 manager_id = null
@@ -165,32 +117,48 @@ const addEmployee = async () => {
             }
             const role_id = await sqlQueries.getRoleID(role);
             const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
-            sqlQueries.addEmployeeToDB(newEmployee).then(success => {
-                console.log(success);
-                init();
-            }, rejected => {
-                console.log(rejected);
-                process.exit();
-            })
+            sqlQueries.addEmployee(newEmployee)
+                .then(success => {
+                    console.log(success);
+                    init();
+                }, rejected => {
+                    throw rejected;
+                })
         }
     )
 }
 
 const deleteEmployee = async () => {
     const employees = await sqlQueries.getEmployeeNames();
-    inquire.prompt([{
+    inquire.prompt({
         type: 'list',
         message: "Which employee would you like to delete?",
         choices: employees,
         name: "choice"
-    }]).then(your => {
-        sqlQueries.deleteEmployee(your.choice).then(success => {
-            console.log(success);
-            init()
-        }, rejected => {
-            console.log(rejected)
-            process.exit();
-        });
+    }).then(prompt => {
+        sqlQueries.deleteEmployee(prompt.choice)
+            .then(success => {
+                console.log(success);
+                init()
+            }, rejected => {
+                throw rejected;
+            });
+    })
+}
+
+const addDepartment = async () => {
+    inquire.prompt({
+        message: "What is the new department you want to add?",
+        name: "choice"
+    }).then(prompt => {
+        const departmentToAdd = prompt.choice;
+        sqlQueries.addDepartment(departmentToAdd)
+            .then(success => {
+                console.log(success);
+                init();
+            }, rejected => {
+                throw rejected
+            });
     })
 }
 
@@ -210,20 +178,20 @@ const chooseEmployeeUpdates = async () => {
             name: "role"
         }
     ]).then(
-        async (data) => {
-            const role_id = await sqlQueries.getRoleID(data.role)
-            const employee_id = await sqlQueries.getEmployeeID(data.employee);
+        async (prompt) => {
+            const role_id = await sqlQueries.getRoleID(prompt.role)
+            const employee_id = await sqlQueries.getEmployeeID(prompt.employee);
             const newEmployeeRole = {
                 id: employee_id,
                 role_id: role_id
             }
-            sqlQueries.updateEmployeeRole(newEmployeeRole).then(success => {
-                console.log(success);
-                init();
-            }, rejected => {
-                console.log(rejected);
-                process.exit();
-            });
+            sqlQueries.updateEmployeeRole(newEmployeeRole)
+                .then(success => {
+                    console.log(success);
+                    init();
+                }, rejected => {
+                    throw rejected;
+                });
         }
     );
 }
@@ -231,7 +199,7 @@ const chooseEmployeeUpdates = async () => {
 const init = () => {
     inquire.prompt([{
         type: "list",
-        message: "What would you like to do?",
+        message: `${chalk.yellow("What would you like to do?")}`,
         choices: [
             `${chalk.cyan("View all employees")}`,
             `${chalk.cyan("View employees by Department")}`,
@@ -240,13 +208,13 @@ const init = () => {
             `${chalk.redBright("Remove employee")}`,
             `${chalk.green("Add Department")}`,
             `${chalk.green("Add Role")}`,
-            `${chalk.bgMagentaBright("Update Employee Role")}`,
-            `${chalk.bgMagentaBright("Update Employee Manager")}`,
+            `${chalk.magentaBright("Update Employee Role")}`,
+            `${chalk.magentaBright("Update Employee Manager")}`,
             `${chalk.bgRedBright("EXIT")}`
         ],
         name: "action"
-    }]).then(your => {
-        switch (your.action) {
+    }]).then(prompt => {
+        switch (prompt.action) {
             case `${chalk.cyan("View all employees")}`:
                 viewAllEmployees();
                 break;
@@ -262,10 +230,13 @@ const init = () => {
             case `${chalk.redBright("Remove employee")}`:
                 deleteEmployee();
                 break;
-            case `${chalk.bgMagentaBright("Update Employee Role")}`:
+            case `${chalk.green("Add Department")}`:
+                addDepartment();
+                break;
+            case `${chalk.magentaBright("Update Employee Role")}`:
                 chooseEmployeeUpdates();
                 break;
-            case `${chalk.bgMagentaBright("Update Employee Manager")}`:
+            case `${chalk.magentaBright("Update Employee Manager")}`:
                 console.log("update manager")
                 break;
             default:
