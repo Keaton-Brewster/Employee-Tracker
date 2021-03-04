@@ -1,4 +1,5 @@
 const mysql = require('mysql');
+const chalk = require('chalk')
 
 const config = {
     host: 'localhost',
@@ -10,7 +11,35 @@ const config = {
 
 const conn = mysql.createConnection(config);
 
-const getDepartments = async () => {
+const viewAllEmployees = () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+                    FROM employees e
+                    INNER JOIN roles r
+                    ON e.role_id = r.role_id
+                    INNER JOIN deps d
+                    ON r.department_id = d.id
+                    LEFT JOIN employees m
+                    ON m.id = e.Manager
+                    ORDER BY id`,
+            (err, table) => {
+                if (err) reject(err);
+                resolve(table);
+            })
+    })
+}
+
+const viewAllDepartments = () => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT Department FROM deps`,
+            (err, table) => {
+                if (err) reject(err);
+                resolve(table)
+            })
+    })
+}
+
+const getDepartments = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT Department FROM deps`,
             (err, table) => {
@@ -21,7 +50,19 @@ const getDepartments = async () => {
     })
 }
 
-const viewEmployeesByDepartment = async (department) => {
+const getDepartmentID = (departmentName) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`SELECT id FROM deps
+                    WHERE Department = "${departmentName}"`,
+            (err, table) => {
+                if (err) reject(err);
+                table = table.map(col => col.id);
+                resolve(table)
+            })
+    })
+}
+
+const viewEmployeesByDepartment = (department) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
                 FROM employees e
@@ -39,7 +80,7 @@ const viewEmployeesByDepartment = async (department) => {
     })
 }
 
-const getManagers = async () => {
+const getManagers = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT CONCAT(e.First_name," ",e.Last_name) as NAME
                     FROM employees e
@@ -54,7 +95,7 @@ const getManagers = async () => {
     })
 }
 
-const getManagerID = async (managerName) => {
+const getManagerID = (managerName) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT id FROM employees m
                     INNER JOIN roles r
@@ -68,7 +109,7 @@ const getManagerID = async (managerName) => {
     })
 }
 
-const viewEmployeesByManager = async (manager_id) => {
+const viewEmployeesByManager = (manager_id) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
                     FROM employees e
@@ -86,7 +127,7 @@ const viewEmployeesByManager = async (manager_id) => {
     })
 }
 
-const getRoles = async () => {
+const getRoles = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT title FROM roles`,
             (err, table) => {
@@ -97,7 +138,7 @@ const getRoles = async () => {
     })
 };
 
-const getRoleID = async (roleTitle) => {
+const getRoleID = (roleTitle) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT role_id FROM roles
                     WHERE ?`, {
@@ -136,15 +177,14 @@ const deleteEmployee = (employeeFullName) => {
                 CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
             (err) => {
                 if (err) {
-                    console.log("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")
-                    reject(err)
+                    console.log(`${chalk.bgRedBright("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")}`)
                 }
                 resolve("Employee Deleted!")
             })
     })
 }
 
-const addDepartment = async (department) => {
+const addDepartment = (department) => {
     return new Promise((resolve, reject) => {
         conn.query(`INSERT INTO deps (Department)
                     VALUES("${department}")`,
@@ -155,7 +195,38 @@ const addDepartment = async (department) => {
     })
 }
 
-const getEmployeeNames = async () => {
+const deleteDepartment = (department) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`DELETE FROM deps
+                    WHERE
+                    Department = "${department}"`,
+            (err) => {
+                if (err) {
+                    console.log(`${chalk.bgRedBright("You cannot delete a department that still has employees. Reassign those employees before trying again.")}`);
+                } else {
+                    resolve("Department gone!")
+                }
+            })
+    })
+}
+
+const addRole = (roleOBJ) => {
+    return new Promise((resolve, reject) => {
+        const {
+            title,
+            salary,
+            department_id
+        } = roleOBJ
+        conn.query(`INSERT INTO roles (title, salary, department_id)
+                    VALUES ("${title}", ${salary}, ${department_id})`,
+            (err) => {
+                if (err) reject(err);
+                resolve("Role added!")
+            })
+    })
+}
+
+const getEmployeeNames = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
                 AS name FROM employees e`,
@@ -167,7 +238,7 @@ const getEmployeeNames = async () => {
     })
 }
 
-const getEmployeeID = async (employeeName) => {
+const getEmployeeID = (employeeName) => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT id FROM employees
                     WHERE CONCAT(First_name, " ", Last_name)
@@ -180,7 +251,7 @@ const getEmployeeID = async (employeeName) => {
     })
 }
 
-const updateEmployeeRole = async (newEmployeeRole) => {
+const updateEmployeeRole = (newEmployeeRole) => {
     return new Promise((resolve, reject) => {
         conn.query(`UPDATE employees e
                 SET role_id = ${newEmployeeRole.role_id}
@@ -192,6 +263,17 @@ const updateEmployeeRole = async (newEmployeeRole) => {
     })
 }
 
+const updateEmployeeManager = (newEmployeeManager) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`UPDATE employees e
+                    SET Manager = ${newEmployeeManager.manager_id}
+                    WHERE id = ${newEmployeeManager.employee_id}`,
+            (err) => {
+                if (err) reject(err)
+                resolve("Employee updated!")
+            })
+    })
+}
 
 const print = async (callback) => {
     let data = await callback("Manager");
@@ -200,17 +282,23 @@ const print = async (callback) => {
 
 
 module.exports = {
+    viewAllEmployees: viewAllEmployees,
+    viewAllDepartments: viewAllDepartments,
     getRoles: getRoles,
     getRoleID: getRoleID,
     getManagers: getManagers,
     getManagerID: getManagerID,
     addEmployee: addEmployee,
     deleteEmployee: deleteEmployee,
+    deleteDepartment: deleteDepartment,
     getEmployeeNames: getEmployeeNames,
     getEmployeeID: getEmployeeID,
     updateEmployeeRole: updateEmployeeRole,
+    updateEmployeeManager: updateEmployeeManager,
     viewEmployeesByManager: viewEmployeesByManager,
     getDepartments: getDepartments,
     viewEmployeesByDepartment: viewEmployeesByDepartment,
     addDepartment: addDepartment,
+    addRole: addRole,
+    getDepartmentID: getDepartmentID,
 }
