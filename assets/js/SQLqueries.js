@@ -256,6 +256,18 @@ const addRole = (roleOBJ) => {
     })
 }
 
+const deleteRole = (roleToDelete) => {
+    return new Promise((resolve, reject) => {
+        conn.query(`DELETE FROM roles
+                    WHERE
+                    role_id = ${roleToDelete}`,
+            (err) => {
+                if (err) reject(err);
+                resolve('Role deleted!')
+            })
+    })
+}
+
 const getEmployeeNames = () => {
     return new Promise((resolve, reject) => {
         conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
@@ -322,6 +334,7 @@ module.exports = {
     addEmployee: addEmployee,
     deleteEmployee: deleteEmployee,
     deleteDepartment: deleteDepartment,
+    deleteRole: deleteRole,
     getEmployeeNames: getEmployeeNames,
     getEmployeeID: getEmployeeID,
     updateEmployeeRole: updateEmployeeRole,
