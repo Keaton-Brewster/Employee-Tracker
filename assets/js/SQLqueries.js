@@ -1,5 +1,5 @@
 const mysql = require('mysql');
-const chalk = require('chalk')
+const chalk = require('chalk');
 
 const config = {
     host: 'localhost',
@@ -207,7 +207,7 @@ const deleteEmployee = (employeeFullName) => {
                 CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
             (err) => {
                 if (err) {
-                    console.log(`${chalk.bgRedBright("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")}`)
+                    reject(`${chalk.bgRedBright("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")}`)
                 }
                 resolve("Employee Deleted!")
             })
@@ -232,10 +232,9 @@ const deleteDepartment = (department) => {
                     Department = "${department}"`,
             (err) => {
                 if (err) {
-                    console.log(`${chalk.bgRedBright("You cannot delete a department that still has employees. Reassign those employees before trying again.")}`);
-                } else {
-                    resolve("Department gone!")
+                    reject(`${chalk.bgRedBright("You cannot delete a department that still has employees. Reassign those employees before trying again.")}`);
                 }
+                resolve("Department gone!")
             })
     })
 }
@@ -262,7 +261,7 @@ const deleteRole = (roleToDelete) => {
                     WHERE
                     role_id = ${roleToDelete}`,
             (err) => {
-                if (err) reject(err);
+                if (err) reject(`${chalk.bgRedBright("You cannot delete managers. Sorry.")}`);
                 resolve('Role deleted!')
             })
     })

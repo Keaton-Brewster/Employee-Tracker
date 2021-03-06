@@ -151,12 +151,13 @@ const addEmployee = async () => {
                     const newEmployee = new Employee(First_name, Last_name, role_id, manager_id);
                     sqlQueries.addEmployee(newEmployee)
                         .then(
-                            success => {
-                                console.log(success);
-                                init();
-                            }, rejection => {
+                            success => console.log(success),
+                            rejection => {
                                 throw rejection;
                             })
+                        .then(() => {
+                            init();
+                        })
                 }
             })
 }
@@ -180,10 +181,11 @@ const deleteEmployee = async () => {
 
                     sqlQueries.deleteEmployee(prompt.choice)
                         .then(
-                            success => {
-                                console.log(success);
-                                init()
-                            });
+                            success => console.log(success),
+                            rejection => console.log(rejection))
+                        .then(() => {
+                            init();
+                        });
                 }
             })
 }
@@ -197,12 +199,13 @@ const addDepartment = () => {
             const departmentToAdd = prompt.choice;
             sqlQueries.addDepartment(departmentToAdd)
                 .then(
-                    success => {
-                        console.log(success);
-                        init();
-                    }, rejection => {
+                    success => console.log(success),
+                    rejection => {
                         throw rejection
-                    });
+                    })
+                .then(() => {
+                    init();
+                });
         })
 }
 
@@ -221,8 +224,12 @@ const deleteDepartment = async () => {
                     .then(
                         success => {
                             console.log(success);
-                            init();
-                        });
+                        }, rejection => {
+                            console.log(rejection);
+                        })
+                    .then(() => {
+                        init();
+                    });
             })
 }
 
@@ -262,12 +269,13 @@ const addRole = async () => {
                     const roleToAdd = new Role(title, salary, department_id)
                     sqlQueries.addRole(roleToAdd)
                         .then(
-                            success => {
-                                console.log(success);
-                                init()
-                            }, rejection => {
+                            success => console.log(success),
+                            rejection => {
                                 throw rejection
                             })
+                        .then(() => {
+                            init();
+                        })
                 }
             })
 }
@@ -285,14 +293,12 @@ const deleteRole = async () => {
                 const roleToDelete = await sqlQueries.getRoleID(prompt.choice);
                 sqlQueries.deleteRole(roleToDelete)
                     .then(
-                        success => {
-                            console.log(success);
-                            init()
-                        },
-                        rejection => {
-                            throw rejection
-                        }
+                        success => console.log(success),
+                        rejection => console.log(rejection)
                     )
+                    .then(() => {
+                        init();
+                    })
             })
 }
 
@@ -331,12 +337,13 @@ const updateEmployeeRole = async () => {
                     }
                     sqlQueries.updateEmployeeRole(newEmployeeRole)
                         .then(
-                            success => {
-                                console.log(success);
-                                init();
-                            }, rejection => {
+                            success => console.log(success),
+                            rejection => {
                                 throw rejection;
-                            });
+                            })
+                        .then(() => {
+                            init();
+                        });
                 }
             }
         );
@@ -377,12 +384,13 @@ const updateEmployeeManager = async () => {
                     }
                     sqlQueries.updateEmployeeManager(employeesNewManager)
                         .then(
-                            success => {
-                                console.log(success);
-                                init();
-                            }, rejection => {
+                            success => console.log(success),
+                            rejection => {
                                 throw rejection
                             })
+                        .then(() => {
+                            init();
+                        })
                 }
             })
 }
