@@ -141,14 +141,21 @@ const getManagerID = (managerName) => {
 
 const viewEmployeesByManager = (manager_id) => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT e.id,e.First_name,e.Last_name,Title,Salary,Department, CONCAT(m.First_name, " ", m.Last_name) as Manager 
+        conn.query(`SELECT e.id,
+                           e.First_name,
+                           e.Last_name,
+                           Title,
+                           Salary,
+                           Department, 
+                           CONCAT(m.First_name, " ", m.Last_name) 
+                            as Manager 
                     FROM employees e
                     INNER JOIN roles r
-                    ON e.role_id = r.role_id
+                     ON e.role_id = r.role_id
                     INNER JOIN deps d
-                    ON r.department_id = d.id
+                     ON r.department_id = d.id
                     LEFT JOIN employees m
-                    ON m.id = e.Manager
+                     ON m.id = e.Manager
                     WHERE e.Manager = ${manager_id}
                     ORDER BY id`, (err, table) => {
             if (err) reject(err);
@@ -190,8 +197,10 @@ const addEmployee = (employeeOBJ) => {
             role_id,
             Manager
         } = employeeOBJ;
-        conn.query(`INSERT INTO employees (First_name, Last_name, role_id, Manager)
-                    VALUES ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
+        conn.query(`INSERT INTO employees 
+                        (First_name, Last_name, role_id, Manager)
+                    VALUES 
+                        ("${First_name}", "${Last_name}", ${role_id}, ${Manager})`,
             (err) => {
                 if (err) reject(err);
                 resolve("Employee added!")
@@ -201,10 +210,10 @@ const addEmployee = (employeeOBJ) => {
 
 const deleteEmployee = (employeeFullName) => {
     return new Promise((resolve, reject) => {
-        console.log(employeeFullName);
         conn.query(`DELETE FROM employees e
                 WHERE
-                CONCAT(e.First_name, " ", e.Last_name) = "${employeeFullName}"`,
+                CONCAT(e.First_name, " ", e.Last_name) 
+                    = "${employeeFullName}"`,
             (err) => {
                 if (err) {
                     reject(`${chalk.bgRedBright("You cannot delete a manager who still has employees.\nPlease reassign the managers employees before deleting")}`)
@@ -246,8 +255,10 @@ const addRole = (roleOBJ) => {
             salary,
             department_id
         } = roleOBJ
-        conn.query(`INSERT INTO roles (title, salary, department_id)
-                    VALUES ("${title}", ${salary}, ${department_id})`,
+        conn.query(`INSERT INTO roles 
+                        (title, salary, department_id)
+                    VALUES 
+                        ("${title}", ${salary}, ${department_id})`,
             (err) => {
                 if (err) reject(err);
                 resolve("Role added!")
@@ -269,8 +280,10 @@ const deleteRole = (roleToDelete) => {
 
 const getEmployeeNames = () => {
     return new Promise((resolve, reject) => {
-        conn.query(`SELECT CONCAT(e.First_name, " ", e.Last_name)
-                AS name FROM employees e`,
+        conn.query(`SELECT 
+                        CONCAT(e.First_name, " ", e.Last_name)
+                        AS name 
+                    FROM employees e`,
             (err, table) => {
                 if (err) reject(err);
                 table.map(col => col.name)
@@ -315,12 +328,6 @@ const updateEmployeeManager = (newEmployeeManager) => {
             })
     })
 }
-
-const print = async (callback) => {
-    let data = await callback("Manager");
-    console.log(data)
-}
-
 
 module.exports = {
     viewAllEmployees: viewAllEmployees,
