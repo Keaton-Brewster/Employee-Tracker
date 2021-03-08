@@ -272,7 +272,7 @@ const deleteRole = (roleToDelete) => {
                     WHERE
                     role_id = ${roleToDelete}`,
             (err) => {
-                if (err) reject(`${chalk.bgRedBright("You cannot delete managers. Sorry.")}`);
+                if (err) reject(`${chalk.bgRedBright("You cannot remove roles which employees are still assigned to.")}`);
                 resolve('Role deleted!')
             })
     })
