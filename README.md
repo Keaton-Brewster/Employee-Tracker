@@ -37,7 +37,9 @@ npm start
 ```
  to get the application running. This application also relies on a local mySQL DB so before using locally, be sure to copy and initialize the schema as well as the seeds.sql so that the application works as intended.
 
-  
+## Tutorial Video: 
+https://drive.google.com/file/d/1pZabIbl6wvEeAF9cD8BgOiiYLzVwtV28/view
+
   ---
 ## Contribution guidelines
 
